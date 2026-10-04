@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s), esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let SERVER={ai:false,up:false}, T=null; // T = current tutorial
 fetch("/api/status").then(r=>r.json()).then(s=>{SERVER={...s,up:true};$("#status").textContent=s.ai?`Server on. AI model: ${s.model}`:"Server on. No AI model connected: link/topic steps use rule-based extraction (rougher)."}).catch(()=>{$("#status").textContent="Offline mode: built-in guides only. Run server.py for links and topic search."});
-$("#chips").innerHTML=PRESETS.map(p=>`<button class="chip" data-id="${p.id}">${p.emoji} ${esc(p.title.split(" (")[0])}</button>`).join("");
+$("#chips").innerHTML=PRESETS.map(p=>`<button class="chip" data-id="${p.id}">${esc(p.title.split(" (")[0])}</button>`).join("");
 $("#chips").onclick=e=>{const b=e.target.closest("[data-id]");if(b)load(PRESETS.find(p=>p.id==b.dataset.id))};
 $("#go").onclick=run; $("#q").onkeydown=e=>{if(e.key=="Enter")run()};
 async function post(u,b){const r=await fetch(u,{method:"POST",body:JSON.stringify(b)});const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);return j}
@@ -26,7 +26,7 @@ function render(){
   let h=`<div class="card"><b>${esc(T.title)}</b><div class="meta">${T.id?`<span class="badge">built-in guide, hand-written, not extracted</span>`:`<span class="badge">${T.ai?"AI-structured":"rule-based extraction"}</span><a href="${esc(T.source_url)}" target="_blank" rel="noopener">source</a>`}</div>
   <div class="bar"><i style="width:${n?done/n*100:0}%"></i></div><div class="meta">${done} of ${n} steps done</div></div>`;
   if(T.materials?.length)h+=`<div class="card"><b>You'll need</b><div>${T.materials.map(esc).join(" · ")}</div></div>`;
-  h+=`<div class="card"><b>What do you have on hand?</b> <input type="text" id="have" value="${esc(localStorage.getItem("sw:have")||"")}" placeholder="e.g. paper, scissors" onchange="setHave(this.value)">${(()=>{const m=missing();return m===null?"":m.length?`<div class="meta">Possibly missing: ${m.map(esc).join("; ")}</div>`:`<div class="meta">You seem to have what's listed.</div>`})()}</div>`;
+  h+=`<div class="card"><b>What do you have on hand?</b><input type="text" id="have" value="${esc(localStorage.getItem("sw:have")||"")}" placeholder="e.g. paper, scissors" onchange="setHave(this.value)">${(()=>{const m=missing();return m===null?"":m.length?`<div class="meta">Possibly missing: ${m.map(esc).join("; ")}</div>`:`<div class="meta">You seem to have what's listed.</div>`})()}</div>`;
   const rk=risks();if(rk.length)h+=`<div class="card err"><b>⛔ High-risk task</b><ul>${rk.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>This app can't verify the steps are safe. Treat them as a starting point only.</div>`;
   if(T.warnings?.length)h+=`<div class="card warn"><h3>⚠ Before you start</h3><ul>${T.warnings.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>`;
   if(T.rejected_steps?.length)h+=`<div class="card warn"><h3>Removed: not found in the source</h3><p>The AI wrote these, but the source text does not support them, so they are not in your steps:</p><ul>${T.rejected_steps.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>`;
