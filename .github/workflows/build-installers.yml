@@ -1,0 +1,54 @@
+name: build-installers
+# Manual only. Builds an UNSIGNED Windows .exe and an UNSIGNED macOS (Apple Silicon) .app inside a .dmg, smoke-tests the built files, uploads artifacts,
+# and optionally attaches them to an existing release tag. Headless smoke test only: it starts the packaged app and requests pages; it does not open a browser or click anything.
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing release tag to attach the files to (leave empty to only upload workflow artifacts)"
+        required: false
+        default: ""
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: python -m pip install -r requirements.txt pyinstaller
+      - name: Build exe
+        shell: bash
+        run: python -m PyInstaller --noconfirm --onefile --name Stepwise --add-data "static;static" --collect-all trafilatura --collect-all justext --collect-all htmldate --collect-all courlan stepwise_app.py
+      - name: Smoke test the built exe
+        run: python packaging/smoke.py dist/Stepwise.exe
+      - uses: actions/upload-artifact@v4
+        with: { name: Stepwise-windows-exe, path: dist/Stepwise.exe }
+  macos:
+    runs-on: macos-latest   # Apple Silicon (arm64): the app will not run on Intel Macs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: python -m pip install -r requirements.txt pyinstaller
+      - name: Build .app
+        run: python -m PyInstaller --noconfirm --windowed --onedir --name Stepwise --add-data "static:static" --collect-all trafilatura --collect-all justext --collect-all htmldate --collect-all courlan stepwise_app.py
+      - name: Make dmg
+        run: hdiutil create -volname Stepwise -srcfolder dist/Stepwise.app -ov -format UDZO dist/Stepwise-mac-arm64.dmg
+      - name: Smoke test the app from the mounted dmg
+        run: |
+          hdiutil attach dist/Stepwise-mac-arm64.dmg -mountpoint /Volumes/StepwiseTest -nobrowse
+          STEPWISE_IDLE_SECONDS=1800 python packaging/smoke.py /Volumes/StepwiseTest/Stepwise.app/Contents/MacOS/Stepwise
+          hdiutil detach /Volumes/StepwiseTest
+      - uses: actions/upload-artifact@v4
+        with: { name: Stepwise-mac-dmg, path: dist/Stepwise-mac-arm64.dmg }
+  attach:
+    needs: [windows, macos]
+    if: ${{ inputs.release_tag != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: files }
+      - env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ inputs.release_tag }}", REPO: "${{ github.repository }}" }
+        run: gh release upload "$TAG" files/*/* --repo "$REPO" --clobber
