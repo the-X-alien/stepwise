@@ -1,0 +1,72 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stepwise AR guide</title>
+<script src="https://unpkg.com/aframe@1.4.2/dist/aframe.min.js"></script>
+<script src="https://unpkg.com/@ar-js-org/ar.js@3.4.7/aframe/build/aframe-ar.js"></script>
+<script src="presets.js"></script><script src="fold.js"></script>
+<style>
+body{margin:0;overflow:hidden;font-family:system-ui,sans-serif}
+#hud{position:fixed;left:0;right:0;bottom:0;background:rgba(15,18,24,.93);color:#fff;padding:12px 14px 16px;z-index:10;border-radius:16px 16px 0 0}
+#hud h2{margin:0 0 2px;font-size:17px}#hud p{margin:0 0 6px;font-size:14px;color:#d7dbe3}#hud .n{font-size:12px;color:#ffd479;margin-bottom:8px}
+#hud .r{display:flex;gap:8px}#hud button{flex:1;border:0;border-radius:10px;padding:11px;font-weight:650;font-size:15px}
+#top{position:fixed;top:0;left:0;right:0;z-index:10;background:rgba(255,248,220,.96);color:#5b4200;font-size:12.5px;padding:7px 12px}#top a{color:#5b4200}
+#back{background:#fff;color:#111}#nx{background:#2f5bea;color:#fff}#rp{background:#394150;color:#fff}
+</style></head><body>
+<div id="top"><b id="stat"></b> <select id="mk" style="font-size:12px"><option value="hiro">Marker: Hiro</option><option value="barcode">Marker: hand-drawn code</option></select> <span id="mode"></span> <a href="index.html">Back</a></div>
+<div id="hud"><h2 id="st"></h2><p id="sd"></p><div class="n" id="sn"></div><div class="r"><button id="back">Back</button><button id="rp">Replay</button><button id="nx">Next</button></div></div>
+<script>
+let D=JSON.parse(localStorage.getItem("sw:ar")||"null");const qp=new URLSearchParams(location.search),demo=qp.get("demo")=="1",KF=qp.get("k");
+if(qp.get("preset")){const p=PRESETS.find(x=>x.id==qp.get("preset"));D={title:p.title,paper:p.paper,steps:p.steps,id:p.id,cur:+qp.get("step")||0}}
+if(!D){document.body.innerHTML="<p style='padding:20px'>Open a guide first, then tap AR guide.</p>"}else{
+let i=D.cur||0;const LH=0.006,ST=1.0; // LH: layer thickness
+const paper=D.paper;
+function state(i){ // simulate steps 0..i-1; stale once a step has no ops
+  let s=FOLD.initial(paper||{w:1,h:1}),stale=false;
+  for(let k=0;k<i;k++){const st=D.steps[k];if(!paper||!st.ops){stale=true;continue}if(stale)continue;s=FOLD.step(s,st.ops).after}
+  return{s,stale}}
+function poly3(pts,color,y){const sh=new THREE.Shape();pts.forEach(([x,z],k)=>k?sh.lineTo(x,z):sh.moveTo(x,z));
+  const g=new THREE.ShapeGeometry(sh);const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color,side:THREE.DoubleSide}));m.rotation.x=Math.PI/2;m.position.y=y;
+  const e=new THREE.LineSegments(new THREE.EdgesGeometry(g),new THREE.LineBasicMaterial({color:0x333333}));e.rotation.x=Math.PI/2;e.position.y=y+0.0005;const gr=new THREE.Group();gr.add(m,e);return{gr,m}}
+function card(text,sub){const c=document.createElement("canvas");c.width=1024;c.height=512;const g=c.getContext("2d");g.fillStyle="rgba(20,24,32,.88)";g.beginPath();g.roundRect?g.roundRect(0,0,1024,512,40):g.rect(0,0,1024,512);g.fill();
+ g.fillStyle="#fff";g.font="bold 84px system-ui,sans-serif";wrap(g,text,48,40+84,930,96,4);g.fillStyle="#ffd479";g.font="48px system-ui,sans-serif";if(sub)wrap(g,sub,48,460,930,50,1);
+ const t=new THREE.CanvasTexture(c);const m=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.6),new THREE.MeshBasicMaterial({map:t,transparent:true,side:THREE.DoubleSide}));return m}
+function wrap(g,t,x,y,w,lh,max){const words=t.split(" ");let line="",n=0;for(const wd of words){const test=line+wd+" ";if(g.measureText(test).width>w&&line){g.fillText(line,x,y+n*lh);line=wd+" ";n++;if(n>=max){return}}else line=test}g.fillText(line,x,y+n*lh)}
+const front=()=>paper?paper.color:"#fff",back=()=>"#ffffff";
+AFRAME.registerComponent("paper",{init(){this.t0=null;this.anim=[];
+  const root=new THREE.Group(),{s,stale}=state(i),st=D.steps[i],canSim=paper&&st.ops&&!stale;
+  const bb=card((i+1)+'. '+st.title,'Step '+(i+1)+' of '+D.steps.length);bb.position.set(0,0.45,-(paper?paper.h/2:0.5)-0.45);bb.rotation.x=-0.5;root.add(bb);
+  if(!paper){this.el.setObject3D('p',root);this.sim=false;return}
+  const draw=(l,parent,yRel)=>{const{gr,m}=poly3(l.pts,l.face?back():front(),yRel);parent.add(gr);return m};
+  if(!canSim){s.layers.forEach(l=>draw(l,root,l.z*LH+0.002));s.creases.forEach(c=>{root.add(lineObj(c,0.02))});this.el.setObject3D("p",root);this.sim=false;return}
+  const r=FOLD.step(s,st.ops);
+  s.creases.forEach(c=>root.add(lineObj(c,0.02)));
+  r.statics.forEach(l=>draw(l,root,l.z*LH+0.002));
+  r.moves.forEach(mv=>{const piv=new THREE.Group();piv.position.set(mv.p[0],mv.zH*LH,mv.p[1]);piv.rotation.y=-Math.atan2(mv.u[1],mv.u[0]);
+    const loc=mv.pts.map(q=>{const d=[q[0]-mv.p[0],q[1]-mv.p[1]];return[d[0]*mv.u[0]+d[1]*mv.u[1],d[0]*mv.v[0]+d[1]*mv.v[1]]});
+    const fold=new THREE.Group();piv.add(fold);const{gr,m}=poly3(loc,mv.face?back():front(),(mv.z-mv.zH)*LH+0.002);fold.add(gr);root.add(piv);
+    this.anim.push({fold,m,mv});});
+  r.after.creases.forEach(c=>root.add(lineObj(c,0.02)));
+  this.el.setObject3D("p",root);this.sim=true},
+ tick(t){if(!this.sim)return;if(this.t0===null)this.t0=t+500;let k=Math.min(Math.max((t-this.t0)/1800,0),1);if(KF!==null)k=+KF;
+  const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+  this.anim.forEach(({fold,m,mv})=>{const f=mv.crease?(e<.5?e*2:2-e*2):e;fold.rotation.x=(mv.under?1:-1)*Math.PI*f;
+    const flipped=f>.5&&!mv.crease||(mv.crease&&f>.5);const faceNow=flipped?1-mv.face:mv.face;m.material.color.set(faceNow?back():front())})}});
+function lineObj(c,y,dash){const g=new THREE.BufferGeometry().setFromPoints(c.map(q=>new THREE.Vector3(q[0],y*0.3,q[1])));return new THREE.Line(g,new THREE.LineBasicMaterial({color:0xe11d48}))}
+const sc=document.createElement("a-scene");sc.setAttribute("embedded","");sc.setAttribute("vr-mode-ui","enabled:false");
+const MK=qp.get("m")||localStorage.getItem("sw:marker")||"hiro"; // hiro (default) or barcode (hand-drawable 3x3 code 5)
+if(!demo){sc.setAttribute("arjs","sourceType:webcam;debugUIEnabled:false;"+(MK=="barcode"?"detectionMode:mono_and_matrix;matrixCodeType:3x3;":""));sc.setAttribute("renderer","logarithmicDepthBuffer:true;alpha:true")}else sc.setAttribute("background","color:#d9dde5");
+sc.style.cssText="position:fixed;inset:0";document.body.prepend(sc);
+function build(){sc.querySelectorAll(".dyn").forEach(e=>e.remove());
+ const st=D.steps[i],{stale}=state(i);
+ const root=document.createElement(demo?"a-entity":"a-marker");root.classList.add("dyn");if(!demo){if(MK=="barcode"){root.setAttribute("type","barcode");root.setAttribute("value","5")}else root.setAttribute("preset","hiro")}
+ if(!demo){root.addEventListener("markerFound",()=>{console.log("SW_MARKER_FOUND");stat("Marker found.")});root.addEventListener("markerLost",()=>{console.log("SW_MARKER_LOST");stat("Marker lost. Point the camera at it.")})}
+ const ent=document.createElement("a-entity");ent.setAttribute("paper","");ent.setAttribute("scale","1 1 1");root.appendChild(ent);sc.appendChild(root);
+ const cam=document.createElement("a-entity");cam.classList.add("dyn");cam.setAttribute("camera","");if(demo){cam.setAttribute("position","0 2.3 1.5");cam.setAttribute("rotation","-58 0 0")}sc.appendChild(cam);
+ const simd=paper&&st.ops&&!stale;
+ $("st").textContent=(i+1)+"/"+D.steps.length+"  "+st.title;$("sd").textContent=st.detail;
+ $("sn").textContent=!paper?"No 3D model for this task type yet: the camera view only anchors a marker.":simd?"3D: idealized flat-fold simulation. The text above is the authority.":"No 3D simulation for this step. Showing the last simulated shape, which may not match your paper now.";
+ $("nx").textContent=i==D.steps.length-1?"Finish":"Next"}
+const $=id=>document.getElementById(id);$("mk").value=MK;$("mk").onchange=e=>{localStorage.setItem("sw:marker",e.target.value);const u=new URL(location.href);u.searchParams.delete("m");location.href=u};function stat(t){$("stat").textContent=t}
+$("nx").onclick=()=>{if(i<D.steps.length-1){i++;build()}else location.href="index.html"};$("back").onclick=()=>{if(i>0){i--;build()}};$("rp").onclick=build;
+$("mode").innerHTML=demo?"Preview without camera. Not AR.":"Marker AR: point the camera at a printed <a href='marker.html' target='_blank'>Hiro marker</a>. It tracks the marker, not your paper, and can't check your folds.";
+sc.addEventListener("loaded",build);if(sc.hasLoaded)build();}
+</script></body></html>
