@@ -9,7 +9,8 @@ import requests
 from bs4 import BeautifulSoup
 
 UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Stepwise/0.1"}
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+BASE = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.abspath(__file__))  # _MEIPASS when frozen by PyInstaller
+ROOT = os.path.join(BASE, "static")
 LLM_URL = os.environ.get("STEPWISE_LLM_BASE_URL", "").rstrip("/")
 LLM_KEY = os.environ.get("STEPWISE_LLM_KEY", "")
 LLM_MODEL = os.environ.get("STEPWISE_LLM_MODEL", "")
