@@ -1,5 +1,5 @@
 <!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Stepwise device check</title>
+<title>Step by Step device check</title>
 <style>body{font:16px system-ui;max-width:640px;margin:20px auto;padding:0 14px}li{margin:8px 0}.ok{color:#0a7d2c}.no{color:#b00020}.na{color:#8a6d00}</style>
 <h1>Device check</h1>
 <p>Open this page on the device and browser you want to use. It only tests what that browser reports. It does not start AR.</p>
@@ -12,7 +12,7 @@ add('Camera API (getUserMedia)',(navigator.mediaDevices&&navigator.mediaDevices.
 if(!navigator.xr){add('WebXR (navigator.xr)','no','- this browser does not expose WebXR');}
 else{add('WebXR (navigator.xr)','ok');
  ['immersive-ar','immersive-vr'].forEach(function(m){
-  navigator.xr.isSessionSupported(m).then(function(s){add('WebXR '+m,s?'ok':'no',s?'- reported supported; Stepwise has no WebXR view yet':'');}).catch(function(e){add('WebXR '+m,'na','- '+e);});});}
-var a=document.createElement('a');add('Apple AR Quick Look (rel=ar)',a.relList&&a.relList.supports&&a.relList.supports('ar')?'ok':'no','- Stepwise has no USDZ models yet');
+  navigator.xr.isSessionSupported(m).then(function(s){add('WebXR '+m,s?'ok':'no',s?'- reported supported; Step by Step has no WebXR view yet':'');}).catch(function(e){add('WebXR '+m,'na','- '+e);});});}
+var a=document.createElement('a');add('Apple AR Quick Look (rel=ar)',a.relList&&a.relList.supports&&a.relList.supports('ar')?'ok':'no','- Step by Step has no USDZ models yet');
 var p=document.createElement('p');p.textContent=navigator.userAgent;p.style.cssText='font-size:12px;color:#666';document.body.appendChild(p);
 </script>
