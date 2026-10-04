@@ -259,7 +259,16 @@ def build(url, topic=None):
     res=res or heuristic_steps(pg["title"],pg["text"])
     res["warnings"]=list(dict.fromkeys(res.get("warnings",[])))[:6]
     res["grounding_summary"]=ground(res["steps"],pg["text"])
+    if res.get("ai"):
+        # AI-written steps must be traceable to the source. Unsupported ones are removed from the instructions and listed separately.
+        keep=[x for x in res["steps"] if x.get("grounded")]; drop=[x for x in res["steps"] if not x.get("grounded")]
+        if len(keep)>=2:
+            res["rejected_steps"]=[(x.get("title","")+": "+x.get("detail","")).strip() for x in drop]
+            res["steps"]=keep; res["grounding_summary"]={"grounded_steps":len(keep),"total":len(keep)+len(drop),"rate":round(len(keep)/(len(keep)+len(drop)),2)}
+        else:
+            res=heuristic_steps(pg["title"],pg["text"]); res["warnings"]=list(dict.fromkeys(res.get("warnings",[])))[:6]; res["grounding_summary"]=ground(res["steps"],pg["text"]); res["ai_rejected_all"]=True
     res["source_url"]=url; res["source_text"]=pg["text"][:20000]
+    if pg.get("source")=="youtube": res["video_note"]=("Video link: captions were found, so these steps come from the spoken text." if pg.get("has_captions") else "Video link: no captions could be read, so these steps come from the video's title and description only, not from the video itself. Treat them as incomplete.")
     res["relevance"]=relevance(topic,res) if topic else 1.0; res["quality"]=quality(res)
     return res
 def topic_agent(topic, tries=4):
@@ -303,17 +312,9 @@ class H(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         n = int(self.headers.get("Content-Length", 0)); body = json.loads(self.rfile.read(n) or b"{}")
         try:
-            if self.path == "/api/tutorial":
-                pg = page_text(body["url"])
-                if len(pg["text"]) < 80: return self.j({"error": "Could not read enough text from that link (video without captions?). Try a written tutorial or search by topic."}, 422)
-                res = None
-                if LLM_URL and LLM_MODEL:
-                    try: res = ai_steps(pg["title"], pg["text"])
-                    except Exception as e: print("AI failed, falling back:", e, file=sys.stderr)
-                res = res or heuristic_steps(pg["title"], pg["text"])
-                res["source_url"] = body["url"]; res["source_text"] = pg["text"][:20000]
-                if not res["steps"]: return self.j({"error": "No steps could be extracted."}, 422)
-                return self.j(res)
+            if self.path == "/api/tutorial":  # kept for old clients; same pipeline (and same unsupported-step rejection) as /api/tutorial2
+                try: return self.j(build(body["url"]))
+                except ValueError as e: return self.j({"error": "Could not read enough text from that link (video without captions?). Try a written tutorial or search by topic."}, 422)
             if self.path == "/api/topic": return self.j(topic_agent(body["topic"]))
             if self.path == "/api/tutorial2": return self.j(build(body["url"]))
             if self.path == "/api/ask": return self.j(ask(body["question"], body.get("step", ""), body.get("context", "")))
