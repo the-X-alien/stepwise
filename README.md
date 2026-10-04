@@ -43,3 +43,6 @@ Public repo, no LICENSE file: default copyright, no permission to copy. Its AR u
 
 ## Repo note
 The two marker images (hiro.jpg, barcode5.png) are embedded as data URIs inside static/marker.html because this repo was uploaded as text files only. The tests under tests/ that mention those filenames expect the image files: extract them from marker.html (base64) if you want to rerun barcode_test.py / track_test.py.
+
+## Device check
+Open static/check.html (http://localhost:8765/check.html when the app runs) on a device and browser. It only reports what that browser says it supports (secure context, camera API, WebXR, Quick Look link support). It does not start the camera or AR and is not verification that Stepwise works on that device.
