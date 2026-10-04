@@ -50,5 +50,8 @@ Public repo, no LICENSE file: default copyright, no permission to copy. Its AR u
 ## Experimental WebXR view (not device-tested)
 `/xr.html?preset=airplane&step=0` places the fold model on a surface using WebXR hit-test, only where the browser reports `immersive-ar` support and the page is on HTTPS or localhost. Otherwise it explains why and links to the marker AR page and to a no-AR 3D preview (`&demo=1`). The builder has not run it on a physical device. `tests/xr_guard_test.py` checks only the capability guard with a mocked support flag. caniuse reports no WebXR on iOS Safari, so iPhones will land on the fallback.
 
+## AI model status (accurate)
+Optional: set STEPWISE_LLM_BASE_URL, STEPWISE_LLM_KEY, STEPWISE_LLM_MODEL (and for slow models STEPWISE_LLM_TIMEOUT seconds, default 120; STEPWISE_LLM_MAX_TOKENS, default 900; STEPWISE_LLM_TEXT_CHARS, default 6000). Tested: a stub model (tests/llm_stub_test.py) and one real local model smoke (Qwen2.5-Coder 1.5B on CPU, run by the repo owner): question answering returned a model reply in 12 s; step building hit the old 120 s timeout and fell back to rule-based steps. The new smaller defaults have not been re-run on that model. This shows wiring, not answer quality.
+
 ## Repo note
 The two marker images (hiro.jpg, barcode5.png) are embedded as data URIs inside static/marker.html because this repo was uploaded as text files only. tests/barcode_test.py and tests/track_test.py only mention those filenames in comments (their feeds are prebuilt); regenerating the feeds needs the images, which can be saved from marker.html.
