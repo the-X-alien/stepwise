@@ -1,0 +1,3 @@
+# Smaller install: no trafilatura (extraction of pages without HowTo markup falls back to plain text).
+requests==2.34.2
+beautifulsoup4==4.15.0
