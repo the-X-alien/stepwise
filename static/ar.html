@@ -31,11 +31,25 @@ function card(text,sub){const c=document.createElement("canvas");c.width=1024;c.
  const t=new THREE.CanvasTexture(c);const m=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.6),new THREE.MeshBasicMaterial({map:t,transparent:true,side:THREE.DoubleSide}));return m}
 function wrap(g,t,x,y,w,lh,max){const words=t.split(" ");let line="",n=0;for(const wd of words){const test=line+wd+" ";if(g.measureText(test).width>w&&line){g.fillText(line,x,y+n*lh);line=wd+" ";n++;if(n>=max){return}}else line=test}g.fillText(line,x,y+n*lh)}
 const front=()=>paper?paper.color:"#fff",back=()=>"#ffffff";
+
+function airplaneFinal(root,i,self){ // idealized finished-shape model for steps 5-6 (NOT produced by the fold simulator)
+  const pl=new THREE.Group();root.add(pl);const col=front(),inner=[[0,-.7],[-.38,.2166],[-.38,.7],[0,.7]],tip=[[0,.2166],[-.12,.506],[-.12,.7],[0,.7]];
+  const mk=sgn=>{const piv=new THREE.Group(),a=poly3(inner.map(q=>[sgn*q[0],q[1]]),col,0).gr,t=new THREE.Group(),b=poly3(tip.map(q=>[sgn*q[0],q[1]]),col,0).gr;
+    t.position.set(sgn*-.38,0,0);t.add(b);piv.add(a,t);pl.add(piv);return{piv,t,sgn}};
+  const W=[mk(1),mk(-1)];
+  const kg=new THREE.BufferGeometry();kg.setAttribute("position",new THREE.Float32BufferAttribute([0,0,-.7,0,0,.7,0,-.12,.7],3));kg.computeVertexNormals();
+  pl.add(new THREE.Mesh(kg,new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide})));
+  const apply=(a,b)=>W.forEach(w=>{w.piv.rotation.z=(w.sgn<0?-1:1)*a*Math.PI/180;w.t.rotation.z=(w.sgn<0?-1:1)*b*Math.PI/180});
+  pl.position.y=0.12;
+  if(i==4){apply(90,0);self.custom=t=>{if(self.t0===null)self.t0=t+500;let k=Math.min(Math.max((t-self.t0)/1800,0),1);if(KF!==null)k=+KF;const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;apply(90-75*e,0)}}
+  else{apply(15,35);self.custom=t=>{pl.rotation.y=KF!==null?0.7:Math.sin(t/1400)*0.7}}
+}
 AFRAME.registerComponent("paper",{init(){this.t0=null;this.anim=[];
   const root=new THREE.Group(),{s,stale}=state(i),st=D.steps[i],canSim=paper&&st.ops&&!stale;
   const bb=card((i+1)+'. '+st.title,'Step '+(i+1)+' of '+D.steps.length);bb.position.set(0,0.45,-(paper?paper.h/2:0.5)-0.45);bb.rotation.x=-0.5;root.add(bb);
   if(!paper){this.el.setObject3D('p',root);this.sim=false;return}
   const draw=(l,parent,yRel)=>{const{gr,m}=poly3(l.pts,l.face?back():front(),yRel);parent.add(gr);return m};
+  if(paper&&D.id=="airplane"&&i>=4){airplaneFinal(root,i,this);this.el.setObject3D("p",root);this.sim=false;return}
   if(!canSim){s.layers.forEach(l=>draw(l,root,l.z*LH+0.002));s.creases.forEach(c=>{root.add(lineObj(c,0.02))});this.el.setObject3D("p",root);this.sim=false;return}
   const r=FOLD.step(s,st.ops);
   s.creases.forEach(c=>root.add(lineObj(c,0.02)));
@@ -46,7 +60,7 @@ AFRAME.registerComponent("paper",{init(){this.t0=null;this.anim=[];
     this.anim.push({fold,m,mv});});
   r.after.creases.forEach(c=>root.add(lineObj(c,0.02)));
   this.el.setObject3D("p",root);this.sim=true},
- tick(t){if(!this.sim)return;if(this.t0===null)this.t0=t+500;let k=Math.min(Math.max((t-this.t0)/1800,0),1);if(KF!==null)k=+KF;
+ tick(t){if(this.custom)return this.custom(t);if(!this.sim)return;if(this.t0===null)this.t0=t+500;let k=Math.min(Math.max((t-this.t0)/1800,0),1);if(KF!==null)k=+KF;
   const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
   this.anim.forEach(({fold,m,mv})=>{const f=mv.crease?(e<.5?e*2:2-e*2):e;fold.rotation.x=(mv.under?1:-1)*Math.PI*f;
     const flipped=f>.5&&!mv.crease||(mv.crease&&f>.5);const faceNow=flipped?1-mv.face:mv.face;m.material.color.set(faceNow?back():front())})}});
@@ -63,7 +77,7 @@ function build(){sc.querySelectorAll(".dyn").forEach(e=>e.remove());
  const cam=document.createElement("a-entity");cam.classList.add("dyn");cam.setAttribute("camera","");if(demo){cam.setAttribute("position","0 2.3 1.5");cam.setAttribute("rotation","-58 0 0")}sc.appendChild(cam);
  const simd=paper&&st.ops&&!stale;
  $("st").textContent=(i+1)+"/"+D.steps.length+"  "+st.title;$("sd").textContent=st.detail;
- $("sn").textContent=!paper?"No 3D model for this task type yet: the camera view only anchors a marker.":simd?"3D: idealized flat-fold simulation. The text above is the authority.":"No 3D simulation for this step. Showing the last simulated shape, which may not match your paper now.";
+ $("sn").textContent=!paper?"No 3D model for this task type yet: the camera view only anchors a marker.":(paper&&D.id=="airplane"&&i>=4)?"3D: idealized finished shape, drawn by hand (not a fold simulation). The text above is the authority.":simd?"3D: idealized flat-fold simulation. The text above is the authority.":"No 3D simulation for this step. Showing the last simulated shape, which may not match your paper now.";
  $("nx").textContent=i==D.steps.length-1?"Finish":"Next"}
 const $=id=>document.getElementById(id);$("mk").value=MK;$("mk").onchange=e=>{localStorage.setItem("sw:marker",e.target.value);const u=new URL(location.href);u.searchParams.delete("m");location.href=u};function stat(t){$("stat").textContent=t}
 $("nx").onclick=()=>{if(i<D.steps.length-1){i++;build()}else location.href="index.html"};$("back").onclick=()=>{if(i>0){i--;build()}};$("rp").onclick=build;
