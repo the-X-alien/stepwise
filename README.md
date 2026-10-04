@@ -41,8 +41,11 @@ Plan B (no pip): python3 -m http.server 8765 --directory static  -> built-in gui
 ## Node0 AR reference (shlok-madhekar/los-altos-proj)
 Public repo, no LICENSE file: default copyright, no permission to copy. Its AR uses public libraries (A-Frame + AR.js Hiro marker, @react-three/xr hit-test, iOS Quick Look USDZ) and a "cumulative stages with the current step highlighted" idea. This project uses the same public libraries and the same general idea, with its own code. No Node0 code is included.
 
-## Repo note
-The two marker images (hiro.jpg, barcode5.png) are embedded as data URIs inside static/marker.html because this repo was uploaded as text files only. The tests under tests/ that mention those filenames expect the image files: extract them from marker.html (base64) if you want to rerun barcode_test.py / track_test.py.
+## What the checks mean (read this)
+- "Steps matched to source text" is a word-overlap match between each step and the best sentence in the source. It is not a check that the step is correct or safe.
+- With an AI model connected (STEPWISE_LLM_*), steps the model wrote that the source text does not support are removed and listed under "Removed: not found in the source". This is the same word-overlap test, so it can miss a wrong step that reuses source words. Tested only against a stub model; a real local model smoke test is separate (tests/real_llm_smoke.py).
+- Video links: if no captions can be read, the steps come from the video's title and description only, and the app says so.
+- Device check: open /check.html to see what your browser reports for camera, WebXR and AR Quick Look. Stepwise has no WebXR view yet.
 
-## Device check
-Open static/check.html (http://localhost:8765/check.html when the app runs) on a device and browser. It only reports what that browser says it supports (secure context, camera API, WebXR, Quick Look link support). It does not start the camera or AR and is not verification that Stepwise works on that device.
+## Repo note
+The two marker images (hiro.jpg, barcode5.png) are embedded as data URIs inside static/marker.html because this repo was uploaded as text files only. tests/barcode_test.py and tests/track_test.py only mention those filenames in comments (their feeds are prebuilt); regenerating the feeds needs the images, which can be saved from marker.html.
