@@ -13,6 +13,9 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 LLM_URL = os.environ.get("STEPWISE_LLM_BASE_URL", "").rstrip("/")
 LLM_KEY = os.environ.get("STEPWISE_LLM_KEY", "")
 LLM_MODEL = os.environ.get("STEPWISE_LLM_MODEL", "")
+LLM_TIMEOUT = int(os.environ.get("STEPWISE_LLM_TIMEOUT", "120"))      # seconds; raise for slow local models
+LLM_MAX_TOKENS = int(os.environ.get("STEPWISE_LLM_MAX_TOKENS", "900"))  # reply budget for the step-building call
+LLM_TEXT_CHARS = int(os.environ.get("STEPWISE_LLM_TEXT_CHARS", "6000"))  # source characters sent; lower for small context windows
 WARN_RE = re.compile(r"\b(warning|caution|danger|careful|sharp|hot|burn|unplug|electric|shock|wear (?:gloves|goggles|eye)|flammable|poison|never|do not|don't)\b", re.I)
 
 def ddg_search(q, n=8):
@@ -154,9 +157,10 @@ def heuristic_steps(title, text):
     warns = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if WARN_RE.search(s) and len(s) < 220][:5]
     return {"title": title, "warnings": warns, "materials": [], "steps": [{"title": s.split(".")[0][:70], "detail": s} for s in steps], "method": "heuristic: " + mode, "ai": False}
 
-def llm(messages, max_tokens=1800):
+def llm(messages, max_tokens=None):
+    max_tokens = max_tokens or LLM_MAX_TOKENS
     r = requests.post(LLM_URL + "/chat/completions", headers={"Authorization": "Bearer " + LLM_KEY},
-                      json={"model": LLM_MODEL, "messages": messages, "max_tokens": max_tokens, "temperature": 0.2}, timeout=120)
+                      json={"model": LLM_MODEL, "messages": messages, "max_tokens": max_tokens, "temperature": 0.2}, timeout=LLM_TIMEOUT)
     r.raise_for_status()
     return r.json()["choices"][0]["message"]["content"]
 
@@ -164,7 +168,7 @@ def ai_steps(title, text):
     prompt = ("Turn this tutorial text into simple beginner steps. Reply with ONLY JSON: "
               '{"title":str,"warnings":[str],"materials":[str],"steps":[{"title":str,"detail":str}]}. '
               "Only use what the text says; do not invent steps. Warnings = safety or common mistakes.\n\nTITLE: "
-              + title + "\n\nTEXT:\n" + text[:12000])
+              + title + "\n\nTEXT:\n" + text[:LLM_TEXT_CHARS])
     out = llm([{"role": "user", "content": prompt}])
     m = re.search(r"\{.*\}", out, re.S)
     data = json.loads(m.group(0))
