@@ -77,7 +77,7 @@ function build(){sc.querySelectorAll(".dyn").forEach(e=>e.remove());
  $("sn").textContent=!paper?"No 3D model for this task type yet: the camera view only anchors a marker.":(paper&&D.id=="airplane"&&i>=4)?"3D: idealized finished shape, drawn by hand (not a fold simulation). The text above is the authority.":simd?"3D: idealized flat-fold simulation. The text above is the authority.":"No 3D simulation for this step. Showing the last simulated shape, which may not match your paper now.";
  $("nx").textContent=i==D.steps.length-1?"Finish":"Next"}
 const $=id=>document.getElementById(id);function stat(t){$("stat").textContent=t}
-$("nx").onclick=()=>{if(i<D.steps.length-1){i++;build()}else location.href="index.html"};$("back").onclick=()=>{if(i>0){i--;build()}};$("rp").onclick=build;
+$("nx").onclick=()=>{if(i<D.steps.length-1){i++;build()}else location.href="index.html"+(D.id?"#"+D.id:"")};$("back").onclick=()=>{if(i>0){i--;build()}};$("rp").onclick=build;
 $("mode").innerHTML=demo?"Preview without camera. Not AR.":"Experimental WebXR: checking this device...";
 if(!demo){const m=$("mode");
  if(!window.isSecureContext||!navigator.xr){m.innerHTML="WebXR is not available here ("+(window.isSecureContext?"this browser has no navigator.xr":"needs HTTPS or localhost")+"). Use the <a href='ar.html'>marker AR</a> or <a href='"+location.search+"&demo=1'>preview the 3D model without AR</a>."}
