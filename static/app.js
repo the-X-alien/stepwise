@@ -54,4 +54,6 @@ async function ask(i){
     box.innerHTML=`<div class="ans">${esc(r.answer)}</div><div class="meta">${r.ai?"AI answer, based on the source text":"No AI: retrieved passages only"}</div>`}
   catch(e){box.innerHTML=`<div class="ans">${esc(e.message)}</div>`}
 }
-function openAR(i,pg){localStorage.setItem("sw:ar",JSON.stringify({title:T.title,paper:T.paper||null,steps:T.steps,cur:i}));location.href=pg||"ar.html"}
+function openAR(i,pg){localStorage.setItem("sw:ar",JSON.stringify({title:T.title,id:T.id||null,paper:T.paper||null,steps:T.steps,cur:i}));location.href=pg||"ar.html"}
+
+{const h=location.hash.slice(1),p=PRESETS.find(x=>x.id==h);if(p)load(p)} // returning from the AR/3D page reopens that guide
