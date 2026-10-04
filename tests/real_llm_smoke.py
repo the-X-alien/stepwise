@@ -12,7 +12,7 @@ class S(http.server.BaseHTTPRequestHandler):
     def log_message(self, *a): pass
     def do_GET(self): self.send_response(200); self.send_header("Content-Type", "text/html"); self.end_headers(); self.wfile.write(PAGE.encode())
 threading.Thread(target=http.server.ThreadingHTTPServer(("127.0.0.1", 8799), S).serve_forever, daemon=True).start()
-env = dict(os.environ, PORT="8798", STEPWISE_LLM_BASE_URL=BASE, STEPWISE_LLM_KEY=os.environ.get("STEPWISE_LLM_KEY", "none"), STEPWISE_LLM_MODEL=MODEL)
+env = dict(os.environ, PORT="8798", STEPWISE_LLM_BASE_URL=BASE, STEPWISE_LLM_KEY=os.environ.get("STEPWISE_LLM_KEY", "none"), STEPWISE_LLM_MODEL=MODEL, STEPWISE_AI_BUILD="1")
 srv = subprocess.Popen([sys.executable, os.path.join(ROOT, "server.py")], env=env, stderr=subprocess.PIPE, text=True); time.sleep(1.5)
 def post(p, o, t=240): return json.load(urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:8798" + p, json.dumps(o).encode(), {"Content-Type": "application/json"}), timeout=t))
 try:
