@@ -1,0 +1,5 @@
+# Tested on Linux, Python 3.10.12. Windows: all packages resolve to Windows x64 wheels for Python 3.10-3.13 (checked with pip download; NOT run on Windows).
+# Python 3.10 or newer is required (requests 2.34.2 and trafilatura 2.2.0 need >=3.10).
+requests==2.34.2
+beautifulsoup4==4.15.0
+trafilatura==2.2.0
