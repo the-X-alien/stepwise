@@ -13,6 +13,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 LLM_URL = os.environ.get("STEPWISE_LLM_BASE_URL", "").rstrip("/")
 LLM_KEY = os.environ.get("STEPWISE_LLM_KEY", "")
 LLM_MODEL = os.environ.get("STEPWISE_LLM_MODEL", "")
+AI_BUILD = os.environ.get("STEPWISE_AI_BUILD", "") == "1"  # AI step-building is opt-in; a connected model otherwise only answers questions (rule/markup extraction stays the default, no long waits)
 LLM_TIMEOUT = int(os.environ.get("STEPWISE_LLM_TIMEOUT", "120"))      # seconds; raise for slow local models
 LLM_MAX_TOKENS = int(os.environ.get("STEPWISE_LLM_MAX_TOKENS", "900"))  # reply budget for the step-building call
 LLM_TEXT_CHARS = int(os.environ.get("STEPWISE_LLM_TEXT_CHARS", "6000"))  # source characters sent; lower for small context windows
@@ -257,7 +258,7 @@ def build(url, topic=None):
     sj=pg.get("structured")
     if sj and len(sj["steps"])>=3:
         res={"title":pg["title"],"warnings":[w for w in (re.split(r"(?<=[.!?])\s+",pg["text"]) ) if WARN_RE.search(w) and len(w)<220][:5],"materials":sj["materials"],"steps":sj["steps"],"method":"structured %s markup (numbered) published by the site"%sj["kind"],"ai":False}
-    if not res and LLM_URL and LLM_MODEL:
+    if not res and LLM_URL and LLM_MODEL and AI_BUILD:
         try: res=ai_steps(pg["title"],pg["text"])
         except Exception as e: print("AI failed:",e,file=sys.stderr)
     res=res or heuristic_steps(pg["title"],pg["text"])
