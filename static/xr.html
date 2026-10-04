@@ -69,7 +69,7 @@ $("mode").innerHTML=demo?"Preview without camera. Not AR.":"Experimental WebXR: 
 if(!demo){const m=$("mode");
  if(!window.isSecureContext||!navigator.xr){m.innerHTML="WebXR is not available here ("+(window.isSecureContext?"this browser has no navigator.xr":"needs HTTPS or localhost")+"). Use the <a href='ar.html'>marker AR</a> or <a href='"+location.search+"&demo=1'>preview the 3D model without AR</a>."}
  else navigator.xr.isSessionSupported("immersive-ar").then(ok=>{
-  if(!ok){m.innerHTML="This device/browser does not report immersive-ar. Use the <a href='ar.html'>marker AR</a> or <a href='"+location.search.replace(/^\\?/,'?')+"&demo=1'>preview the 3D model without AR</a>.";return}
+  if(!ok){m.innerHTML="This device/browser does not report immersive-ar. Use the <a href='ar.html'>marker AR</a> or <a href='"+(location.search?location.search+"&":"?")+"demo=1'>preview the 3D model without AR</a>.";return}
   m.innerHTML="Supported (as reported). Tap Start, move the phone to find a surface, then tap to place. Not tested on a physical device by the builder. <button id='go' style='font-size:13px'>Start AR</button>";
   $("go").onclick=()=>{try{sc.enterAR()}catch(e){m.textContent="Could not start AR: "+e}}}).catch(e=>{m.textContent="WebXR check failed: "+e})}
 sc.addEventListener("enter-vr",()=>{window.__inXR=true;const a=document.getElementById("anchor");if(a)a.setAttribute("visible","true")});sc.addEventListener("exit-vr",()=>{window.__inXR=false;const a=document.getElementById("anchor");if(a)a.setAttribute("visible","false")});
