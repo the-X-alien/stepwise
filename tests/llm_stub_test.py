@@ -26,7 +26,7 @@ class S(http.server.BaseHTTPRequestHandler):
         b = json.dumps({"choices": [{"message": {"content": txt}}]}).encode()
         self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(b)
 stub = http.server.ThreadingHTTPServer(("127.0.0.1", 8799), S); threading.Thread(target=stub.serve_forever, daemon=True).start()
-env = dict(os.environ, PORT="8798", STEPWISE_LLM_BASE_URL="http://127.0.0.1:8799/v1", STEPWISE_LLM_KEY="k", STEPWISE_LLM_MODEL="stub-1")
+env = dict(os.environ, PORT="8798", STEPWISE_LLM_BASE_URL="http://127.0.0.1:8799/v1", STEPWISE_LLM_KEY="k", STEPWISE_LLM_MODEL="stub-1", STEPWISE_AI_BUILD="1")
 srv = subprocess.Popen([sys.executable, os.path.join(ROOT, "server.py")], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1.5)
 def post(p, o): return json.load(urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:8798" + p, json.dumps(o).encode(), {"Content-Type": "application/json"})))
 fails = []
