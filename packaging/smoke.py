@@ -11,7 +11,7 @@ try:
         try: get("/api/status"); break
         except Exception: time.sleep(1)
     else: raise SystemExit("FAIL: binary never answered /api/status")
-    checks = [("/api/status", b"ai"), ("/", b"Stepwise"), ("/presets.js", b"airplane"), ("/fold.js", b"FOLD"), ("/ar.html", b"AR guide"), ("/xr.html", b"WebXR"), ("/marker.html", b"markers")]
+    checks = [("/api/status", b"ai"), ("/", b"Step by Step"), ("/presets.js", b"airplane"), ("/fold.js", b"FOLD"), ("/ar.html", b"AR guide"), ("/xr.html", b"WebXR"), ("/marker.html", b"markers")]
     for path, needle in checks:
         body = get(path).read(); good = needle in body
         print(("PASS " if good else "FAIL ") + path, len(body), "bytes"); ok &= good
