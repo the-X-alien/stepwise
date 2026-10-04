@@ -80,7 +80,7 @@ function build(){sc.querySelectorAll(".dyn").forEach(e=>e.remove());
  $("sn").textContent=!paper?"No 3D model for this task type yet: the camera view only anchors a marker.":(paper&&D.id=="airplane"&&i>=4)?"3D: idealized finished shape, drawn by hand (not a fold simulation). The text above is the authority.":simd?"3D: idealized flat-fold simulation. The text above is the authority.":"No 3D simulation for this step. Showing the last simulated shape, which may not match your paper now.";
  $("nx").textContent=i==D.steps.length-1?"Finish":"Next"}
 const $=id=>document.getElementById(id);$("mk").value=MK;$("mk").onchange=e=>{localStorage.setItem("sw:marker",e.target.value);const u=new URL(location.href);u.searchParams.delete("m");location.href=u};function stat(t){$("stat").textContent=t}
-$("nx").onclick=()=>{if(i<D.steps.length-1){i++;build()}else location.href="index.html"};$("back").onclick=()=>{if(i>0){i--;build()}};$("rp").onclick=build;
+$("nx").onclick=()=>{if(i<D.steps.length-1){i++;build()}else location.href="index.html"+(D.id?"#"+D.id:"")};$("back").onclick=()=>{if(i>0){i--;build()}};$("rp").onclick=build;
 $("mode").innerHTML=demo?"Preview without camera. Not AR.":"Marker AR: point the camera at a printed <a href='marker.html' target='_blank'>Hiro marker</a>. It tracks the marker, not your paper, and can't check your folds.";
 sc.addEventListener("loaded",build);if(sc.hasLoaded)build();}
 </script></body></html>
