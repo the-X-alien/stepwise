@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stepwise backend. Local only. Search (DuckDuckGo), page/YouTube extraction, optional LLM.
+"""Step by Step backend. Local only. Search (DuckDuckGo), page/YouTube extraction, optional LLM.
 LLM is optional and uses YOUR OWN key via env vars (never typed into chat):
   STEPWISE_LLM_BASE_URL (e.g. http://localhost:8080/v1)  STEPWISE_LLM_KEY  STEPWISE_LLM_MODEL
 Any OpenAI-compatible endpoint works. Use a provider whose terms allow your age.
@@ -8,7 +8,7 @@ import json, os, re, sys, urllib.parse, http.server
 import requests
 from bs4 import BeautifulSoup
 
-UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Stepwise/0.1"}
+UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Step by Step/0.1"}
 BASE = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.abspath(__file__))  # _MEIPASS when frozen by PyInstaller
 ROOT = os.path.join(BASE, "static")
 LLM_URL = os.environ.get("STEPWISE_LLM_BASE_URL", "").rstrip("/")
@@ -329,5 +329,5 @@ class H(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8765))
-    print("Stepwise on http://localhost:%d  AI: %s" % (port, "on (" + LLM_MODEL + ")" if LLM_URL else "off (heuristic extraction only)"))
+    print("Step by Step on http://localhost:%d  AI: %s" % (port, "on (" + LLM_MODEL + ")" if LLM_URL else "off (heuristic extraction only)"))
     http.server.ThreadingHTTPServer(("127.0.0.1", port), H).serve_forever()
