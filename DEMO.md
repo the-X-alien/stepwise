@@ -8,3 +8,7 @@
 Do not claim: AI answers, real-phone AR tested, tracking of the paper, fold checking, all-task 3D.
 
 Optional/experimental (not the main show): "Surface AR (experimental, untested on devices)" opens /xr.html, which only works on a WebXR-capable browser over HTTPS and otherwise explains why and offers the preview. Real local-model test so far: question answering worked (12 s on a slow CPU model); building steps timed out at 120 s and fell back to the rule-based path, so don't depend on AI in the demo. Slow models: set STEPWISE_LLM_TIMEOUT, STEPWISE_LLM_MAX_TOKENS, STEPWISE_LLM_TEXT_CHARS.
+
+Airplane 3D coverage: steps 1-4 come from the fold simulator; steps 5-6 (wings opening, finished plane with bent tips) are a hand-drawn idealized model of the finished shape, labeled as such in the app, not a simulation. Step 6 turntables slowly. Paper boat, crane and cup remain partial.
+
+AI build is opt-in (STEPWISE_AI_BUILD=1) and not demo-ready on the weak local model; leave it off. Ask-a-question can use the model (about 12 s there).
