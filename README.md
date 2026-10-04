@@ -53,5 +53,7 @@ Public repo, no LICENSE file: default copyright, no permission to copy. Its AR u
 ## AI model status (accurate)
 Optional: set STEPWISE_LLM_BASE_URL, STEPWISE_LLM_KEY, STEPWISE_LLM_MODEL (and for slow models STEPWISE_LLM_TIMEOUT seconds, default 120; STEPWISE_LLM_MAX_TOKENS, default 900; STEPWISE_LLM_TEXT_CHARS, default 6000). Tested: a stub model (tests/llm_stub_test.py) and one real local model smoke (Qwen2.5-Coder 1.5B on CPU, run by the repo owner): question answering returned a model reply in 12 s; step building hit the old 120 s timeout and fell back to rule-based steps. The new smaller defaults have not been re-run on that model. This shows wiring, not answer quality.
 
+Note: step building by an AI model is opt-in (set STEPWISE_AI_BUILD=1). With a model connected but that flag unset, the model only answers questions and steps come from the page markup/rules, so the demo never waits on a slow model. A repeat real-model build on the Qwen 1.5B took 204 s and returned unparseable output, so it fell back to rule-based steps; not demo-ready.
+
 ## Repo note
 The two marker images (hiro.jpg, barcode5.png) are embedded as data URIs inside static/marker.html because this repo was uploaded as text files only. tests/barcode_test.py and tests/track_test.py only mention those filenames in comments (their feeds are prebuilt); regenerating the feeds needs the images, which can be saved from marker.html.
