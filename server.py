@@ -156,7 +156,7 @@ def heuristic_steps(title, text):
         imp = [s.strip() for s in sents if 12 < len(s) < 220 and VRE.match(s.strip())]
         steps = imp[:25]
         mode = "instruction-style sentences (imperative verbs) from the page; no numbered list found"
-    warns = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if WARN_RE.search(s) and len(s) < 220][:5]
+    warns = extract_warnings(text)
     return {"title": title, "warnings": warns, "materials": [], "steps": [{"title": s.split(".")[0][:70], "detail": s} for s in steps], "method": "heuristic: " + mode, "ai": False}
 
 def llm(messages, max_tokens=None):
@@ -252,18 +252,31 @@ def _unused_quality(res):
     st=res["steps"]
     if not st: return 0
     return round(res["grounding_summary"]["rate"]*0.5 + min(len(st),10)/10*0.3 + (0.2 if ("numbered" in res["method"]) else 0),3)
+def extract_warnings(text):
+    """Warnings first: take an explicit 'Warnings' section from the page when present, then keyword sentences (split on newlines too)."""
+    out=[]
+    m=re.search(r"(?:^|\n)\s*(?:Warnings?|Cautions?)\s*\n(.*?)(?:\n\s*(?:Expert Interview|Things You.ll Need|Tips|References|Video|Expert Q&A|About This Article|Reader Success Stories|Related)\b|\Z)",text,re.S)
+    if m:
+        for ln in m.group(1).split("\n"):
+            ln=re.sub(r"^[\s\-*\u2022]+","",ln).strip(); ln=re.sub(r"\s*Thanks!?$","",ln).strip()
+            if 8<len(ln)<260: out.append(ln)
+    for sent in re.split(r"(?<=[.!?])\s+|\n+",text):
+        sent=re.sub(r"\s*Thanks!?$","",sent.strip(" -*\u2022")).strip()
+        if WARN_RE.search(sent) and 8<len(sent)<220: out.append(sent)
+    return list(dict.fromkeys(out))[:6]
+
 def build(url, topic=None):
     pg=page_text(url)
     if len(pg["text"])<80: raise ValueError("too little readable text")
     res=None
     sj=pg.get("structured")
     if sj and len(sj["steps"])>=3:
-        res={"title":pg["title"],"warnings":[w for w in (re.split(r"(?<=[.!?])\s+",pg["text"]) ) if WARN_RE.search(w) and len(w)<220][:5],"materials":sj["materials"],"steps":sj["steps"],"method":"structured %s markup (numbered) published by the site"%sj["kind"],"ai":False}
+        res={"title":pg["title"],"warnings":extract_warnings(pg["text"]),"materials":sj["materials"],"steps":sj["steps"],"method":"structured %s markup (numbered) published by the site"%sj["kind"],"ai":False}
     if not res and LLM_URL and LLM_MODEL and AI_BUILD:
         try: res=ai_steps(pg["title"],pg["text"])
         except Exception as e: print("AI failed:",e,file=sys.stderr)
     res=res or heuristic_steps(pg["title"],pg["text"])
-    res["warnings"]=list(dict.fromkeys(res.get("warnings",[])))[:6]
+    res["warnings"]=list(dict.fromkeys(res.get("warnings") or extract_warnings(pg["text"])))[:6]
     res["grounding_summary"]=ground(res["steps"],pg["text"])
     if res.get("ai"):
         # AI-written steps must be traceable to the source. Unsupported ones are removed from the instructions and listed separately.
