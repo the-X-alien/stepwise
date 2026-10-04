@@ -1,4 +1,4 @@
-"""Desktop launcher: starts the local Stepwise server on 127.0.0.1 and opens the browser. Used as the PyInstaller entry point.
+"""Desktop launcher: starts the local Step by Step server on 127.0.0.1 and opens the browser. Used as the PyInstaller entry point.
 Env: PORT (default: first free port from 8765), STEPWISE_NO_BROWSER=1 (CI/smoke tests),
 STEPWISE_IDLE_SECONDS (quit after this many seconds with no requests; the macOS .app sets 1800 since it has no window to close)."""
 import os, socket, sys, threading, time, webbrowser, http.server
@@ -22,7 +22,7 @@ def main():
     port = int(os.environ["PORT"]) if os.environ.get("PORT") else free_port()
     httpd = http.server.ThreadingHTTPServer(("127.0.0.1", port), Tracked)
     url = "http://localhost:%d/" % port
-    print("Stepwise running at", url, "(Ctrl+C to stop). AI: " + ("on (" + server.LLM_MODEL + ")" if server.LLM_URL else "off"), flush=True)
+    print("Step by Step running at", url, "(Ctrl+C to stop). AI: " + ("on (" + server.LLM_MODEL + ")" if server.LLM_URL else "off"), flush=True)
     idle = int(os.environ.get("STEPWISE_IDLE_SECONDS", "1800" if (getattr(sys, "frozen", False) and sys.platform == "darwin") else "0") or 0)
     if idle:
         def watch():
